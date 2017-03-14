@@ -266,6 +266,7 @@ public:
             else if (command == "save") {
                 std::string name = Window("Enter New Filename:", true);
                 Save(name);
+                Load(".tempsave");
             }
             else if (command == "load") {
                 std::string name = Window("Enter Load Filename:", true);
