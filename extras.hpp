@@ -8,6 +8,9 @@
 #include <sys/ioctl.h>
 #include <stropts.h>
 
+#include <unistd.h> // for usleep
+#include <string>
+
 int _kbhit() {
     static const int STDIN = 0;
     static bool initialized = false;
@@ -51,4 +54,8 @@ void DisableKeyPrint() {
 
 void EnableKeyPrint() {
   int temp = system("stty echo");
+}
+
+void TimeDelay(int milliseconds) {
+    usleep(milliseconds * 1000);
 }

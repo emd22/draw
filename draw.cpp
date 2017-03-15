@@ -5,7 +5,10 @@
 #include <vector>
 #include <fstream>
 
-#include "keypress.hpp"
+#include "extras.hpp"
+#include "load.hpp"
+
+#define BACKINC 10
 
 
 /*
@@ -49,6 +52,10 @@ Shortcuts:
     space: erase                                                               
                                     
 */
+
+int BoolToInt(bool bl) {
+    return bl;
+}
 
 void CColorPrint(char message, int color) { //prints out color(as character)
     std::cout << "\033[" << color << "m" << message << "\033[15m";
@@ -97,9 +104,9 @@ public:
         } 
     }
 
-    void Save(std::string filename) { 
+    void Export(std::string filename) { 
         /*
-        Saves creation by holding a vector of strings
+        Exports creation by holding a vector of strings
         and changing the characters in each string as
         it progresses down the window
         */
@@ -117,7 +124,22 @@ public:
         else { std::cout << "Unable to open file"; } //else statement for not being able to open file
     }
 
-    void Load(std::string filename) { //Loads creation from file
+    void Save(std::string filename) {
+        std::ofstream file(filename+".dpg"); //opening file for writing
+
+        std::cout << "\e[1;1H\e[2J"; // clear screen
+
+        if (file.is_open()) { //checking if file is open, else printing its unable to write.
+            for (int y = 0; y < pixels.size(); y++)  {
+                file << '(' << pixels[y].x << ',' << pixels[y].y << ',' << (int)pixels[y].style << ',' << pixels[y].color << ',' << pixels[y].back << ')';
+                file << '\n';
+            }
+            file.close(); //closing file saving changes
+        }
+        else { std::cout << "Unable to open file"; } //else statement for not being able to open file
+    }
+
+    void LoadExp(std::string filename) { //Loads creation from file
         std::string line;
         std::ifstream file(filename); //opening file for reading 
         
@@ -142,11 +164,91 @@ public:
         CaretPos(oldcx, oldcy); //sets caret position to the previous ones (old x, old y)
     }
 
+    void ParseLoaded(std::string line) {
+        std::vector<int> params;
+
+        for (int i = 0; i < line.length(); i++) {
+            int tempj = 0;
+            if (line[i] == '(') {
+                std::string param;
+
+                for (int j = i+1; line[j] != ')'; j++) {
+                    if (line[j] == ',') {
+                        params.push_back(atoi(param.c_str()));
+                        param = "";
+                    }
+                    else {
+                        param += line[j];
+                    }
+                    tempj = j;
+                }
+                i = tempj;
+
+                Pixel pixel;
+                pixel.x = params[0]+1;
+                pixel.y = params[1]+1;
+                pixel.style = params[2];
+                pixel.color = params[3];
+                pixel.back = params[4];
+
+                params.clear();
+                tokens.push_back(pixel);
+            }
+        }
+    }
+
+    void RemCoords(int x, int y) {
+        for (int i = 0; i < pixels.size(); i++) {
+            Pixel ctok = pixels[i];
+            if (ctok.x == x && ctok.y == y) {
+                pixels.erase(pixels.begin()+i);
+                break;
+            }
+        }
+    }
+
+    void Load(std::string filename) { //Loads creation from file
+        std::string line;
+        std::ifstream file(filename+".dpg"); //opening file for reading 
+        
+        int oldcx = x; //capturing old x position of cursor
+        int oldcy = y; //capturing old y position of cursor(caret)
+
+        CaretPos(0, 0); //setting caret position to {0, 0}
+
+        std::cout << "\e[1;1H\e[2J"; // clear screen
+
+        if (file.is_open()) {
+            
+            int linelen = 0; //setting variable linelen that increments by one when reading through lines
+
+            while (std::getline(file,line)) { //reads through each line in file
+                ParseLoaded(line);
+            }
+            file.close(); // closes file
+            
+            for (int i = 0; i < tokens.size(); i++) {
+                int cback = 0;
+                Pixel ctok = tokens[i];
+
+                if (ctok.back == 1) {
+                    cback = BACKINC;
+                }
+                
+                CaretPos(ctok.x, ctok.y);
+                CColorPrint(ctok.style, ctok.color+cback);
+            }
+        }
+        else { std::cout << "Unable to open file"; }
+
+        CaretPos(oldcx, oldcy); //sets caret position to the previous ones (old x, old y)
+    }
+
     void LoadPresets() { //loads brush presets from hidden file
         std::ifstream file(".brushpresets"); 
         std::string line;
 
-        if (file.is_open()) { //checks if file is open if not, don't add presets(TODO: future bug for assigned keys)
+        if (file.is_open()) { //checks if file is open if not, don't add presets
             std::getline(file, line); //gets only first line
             for (int i = 0; i < line.length(); i++) { //scrolls through characters and sets each one to a preset
                 presets.push_back(line[i]);
@@ -201,61 +303,42 @@ public:
         char k = CurKey(); // gets single key input
 
         if (k == 'w') {
-            if (y > 0) { y--; }
+            if (y > 1) { y--; }
         } 
         if (k == 'a') {
-            if (x > 0) { x--; }
+            if (x > 1) { x--; }
         }
         if (k == 's') {
-            if (y < h) { y++; }
+            if (y < h-1) { y++; }
         } 
         if (k == 'd') {
-            if (x < w) { x++; }
+            if (x < w-1) { x++; }
         }
 
         //presets check
 
-        if (k == '1') {
-            style = presets[0];
-        }
-        else if (k == '2') {
-            style = presets[1];
-        }
-        else if (k == '3') {
-            style = presets[2];
-        }
-        else if (k == '4') {
-            style = presets[3];
-        }
-        else if (k == '5') {
-            style = presets[4];
-        }
-        else if (k == '6') {
-            style = presets[5];
-        }
-        else if (k == '7') {
-            style = presets[6];
-        }
-        else if (k == '8') {
-            style = presets[7];
-        }
-        else if (k == '9') {
-            style = presets[8];
-        }
-        else if (k == '0') {
-            style = presets[9];
+        if (k >= '0' && k <= '9') {
+            style = presets[k-'0'-1];
         }
 
         CaretPos(x, y);
-         
 
         if (k == '\n' || k == '\r') {
             CColorPrint(style, color);
             filelines[y-1][x-1] = style;
+
+            Pixel pixel;
+            pixel.style = style;
+            pixel.color = color;
+            pixel.back = BoolToInt(back);
+            pixel.x = x-1;
+            pixel.y = y-1;
+            pixels.push_back(pixel);
         }
         if (k == ' ') {
             std::cout << ' ';
             filelines[y-1][x-1] = ' ';
+            RemCoords(x-1, y-1);
         }
 
         if (k == 'c') {
@@ -327,12 +410,14 @@ private:
     int y = 1;
 
     std::vector<char> presets;
+    std::vector<Pixel> tokens;
 
     int color = 29;
     bool back = false;
 
     std::string fileline = "";
     std::vector<std::string> filelines;
+    std::vector<Pixel> pixels; 
 
     char style = 'O';
 
@@ -342,13 +427,10 @@ private:
 
 int main() {
     Draw draw;
-
-    draw.Init(TermWidth(), TermHeight()-1);
+    draw.Init(TermWidth(), TermHeight());
 
     draw.LoadPresets();
     //draw.Load(".drawintro");
-
-    draw.Window("test!", false);
 
     while (true) {
         draw.KeyPress();  
