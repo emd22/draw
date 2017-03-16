@@ -6,13 +6,10 @@
 #include <fstream>
 
 #include "extras.hpp"
-#include "load.hpp"
 
 #define BACKINC 10
 
-
 /*
-                                    (made with draw)
                                                              ____                                                                                   
                        _____                                |    \____                                                                              
                       |  __ \                               |         \_                                                                            
@@ -43,15 +40,31 @@ Shortcuts:
         color: change color(back to toggle background color)
         save: saves project
         load: loads project
-
-        load: loads project
-        NOTE: saving can't save color currently, and will hopefully be fixed soon.
-        also going to a menu will remove all color, because it has to save to a temporary file.      
+        export: exports project to text
+        lexport: loads exported file  
         
     enter: place pixel
     space: erase                                                               
                                     
 */
+
+std::vector<std::array<std::string, 2>> commands = {
+    {"save", "saves project into color document"},
+    {"load", "loads project and the color with it"},
+    {"export", "exports project as text for use in games or documents"},
+    {"lexport", "loads export and converts it to projects"},
+    {"color", "use this command to change color"},
+    {"brush", "changes brush to another character"},
+    {"help", "shows dialog for commands and information"}
+};
+
+struct Pixel {
+    int x;
+    int y;
+    char style;
+    int color;
+    int back;
+};
 
 int BoolToInt(bool bl) {
     return bl;
@@ -104,6 +117,65 @@ public:
         } 
     }
 
+    std::string GenSpaces(int n) {
+        std::string spaces = "";
+        for (int i = 0; i < n; i++) {
+            spaces += ' ';
+        }
+        return spaces;
+    }
+
+    void ResetExp() {
+        filelines.clear();
+
+        for (int y = 0; y < TermHeight(); y++) {
+            for (int x = 0; x < TermWidth(); x++) {
+                std::cout << ' '; // fill screen with spaces
+                fileline += ' ';
+            }
+            std::cout << '\n'; // add a few newlines to the mix
+            filelines.push_back(fileline);
+            fileline = "";
+        } 
+    }
+
+    void DrawMessage(std::string message) {
+        int oldx = x;
+        int oldy = y;
+
+        CaretPos(TermWidth()/2-message.length()/2, TermHeight());
+        ColorPrint(message, 36);
+        CaretPos(oldx, oldy);
+        ismessage = true;
+    }
+
+    void ClearMessage() {
+        if (ismessage) {
+            int oldx = x;
+            int oldy = y;
+
+            countstrokes = true;
+
+            if (keystrokes == 24) {
+                CaretPos(0, TermHeight());
+                std::cout << GenSpaces(TermWidth());
+                CaretPos(oldx, oldy);
+                countstrokes = false;
+                ismessage = false;
+                keystrokes = 0;
+            }
+        }
+    }
+
+    void SaveToExp() {
+        filelines.clear();
+        ResetExp();
+
+        for (int i = 0; i < pixels.size(); i++) {
+            filelines[pixels[i].y][pixels[i].x] = pixels[i].style;
+        }
+    }
+
     void Export(std::string filename) { 
         /*
         Exports creation by holding a vector of strings
@@ -111,9 +183,11 @@ public:
         it progresses down the window
         */
 
-        std::ofstream file(filename); //opening file for writing
+        std::ofstream file("exports/"+filename); //opening file for writing
 
         std::cout << "\e[1;1H\e[2J"; // clear screen
+
+        SaveToExp();
 
         if (file.is_open()) { //checking if file is open, else printing its unable to write.
             for (int i = 0; i < filelines.size(); i++) { //saving each line from the vector
@@ -121,11 +195,11 @@ public:
             }
             file.close(); //closing file saving changes
         }
-        else { std::cout << "Unable to open file"; } //else statement for not being able to open file
+        else { DrawMessage("Cannot find file"); } //else statement for not being able to open file
     }
 
     void Save(std::string filename) {
-        std::ofstream file(filename+".dpg"); //opening file for writing
+        std::ofstream file("projects/"+filename+".dpg"); //opening file for writing
 
         std::cout << "\e[1;1H\e[2J"; // clear screen
 
@@ -136,12 +210,12 @@ public:
             }
             file.close(); //closing file saving changes
         }
-        else { std::cout << "Unable to open file"; } //else statement for not being able to open file
+        else { DrawMessage("Cannot find file"); } //else statement for not being able to open file
     }
 
     void LoadExp(std::string filename) { //Loads creation from file
         std::string line;
-        std::ifstream file(filename); //opening file for reading 
+        std::ifstream file("exports/"+filename); //opening file for reading 
         
         int oldcx = x; //capturing old x position of cursor
         int oldcy = y; //capturing old y position of cursor(caret)
@@ -154,12 +228,23 @@ public:
             int linelen = 0; //setting variable linelen that increments by one when reading through lines
             while (std::getline(file,line)) { //reads through each line in file
                 linelen++; //increments linelen
+                for (int i = 0; i < line.length(); i++) {
+                    if (line[i] != ' ') {
+                        Pixel pixel;
+                        pixel.x = i;
+                        pixel.y = linelen;
+                        pixel.style = line[i];
+                        pixel.color = 39;
+                        pixel.back = 0;
+                        pixels.push_back(pixel);
+                    }
+                }
                 std::cout << line; //print line from file onto screen
                 filelines[linelen] = line; //sets a string from vector to the one in file(for being able to commit changes to the actual project)
             }
             file.close(); // closes file
         }
-        else { std::cout << "Unable to open file"; }
+        else { DrawMessage("Cannot find file"); }
 
         CaretPos(oldcx, oldcy); //sets caret position to the previous ones (old x, old y)
     }
@@ -173,7 +258,7 @@ public:
                 std::string param;
 
                 for (int j = i+1; line[j] != ')'; j++) {
-                    if (line[j] == ',') {
+                    if (line[j] == ',') { // look for comma in file to split parameters
                         params.push_back(atoi(param.c_str()));
                         param = "";
                     }
@@ -185,7 +270,7 @@ public:
                 i = tempj;
 
                 Pixel pixel;
-                pixel.x = params[0]+1;
+                pixel.x = params[0]+1; // create variables from file and load into Pixel struct
                 pixel.y = params[1]+1;
                 pixel.style = params[2];
                 pixel.color = params[3];
@@ -197,19 +282,22 @@ public:
         }
     }
 
-    void RemCoords(int x, int y) {
+    void RemCoords(int x_, int y_) {
         for (int i = 0; i < pixels.size(); i++) {
             Pixel ctok = pixels[i];
-            if (ctok.x == x && ctok.y == y) {
+            if (ctok.x == x_ && ctok.y == y_) {
                 pixels.erase(pixels.begin()+i);
+                filelines[y_][x_] = ' ';
                 break;
             }
         }
     }
 
     void Load(std::string filename) { //Loads creation from file
+        tokens.clear();
+
         std::string line;
-        std::ifstream file(filename+".dpg"); //opening file for reading 
+        std::ifstream file("projects/"+filename+".dpg"); //opening file for reading 
         
         int oldcx = x; //capturing old x position of cursor
         int oldcy = y; //capturing old y position of cursor(caret)
@@ -219,7 +307,6 @@ public:
         std::cout << "\e[1;1H\e[2J"; // clear screen
 
         if (file.is_open()) {
-            
             int linelen = 0; //setting variable linelen that increments by one when reading through lines
 
             while (std::getline(file,line)) { //reads through each line in file
@@ -237,6 +324,7 @@ public:
                 
                 CaretPos(ctok.x, ctok.y);
                 CColorPrint(ctok.style, ctok.color+cback);
+                filelines[ctok.y][ctok.x] = ctok.style;
             }
         }
         else { std::cout << "Unable to open file"; }
@@ -253,7 +341,6 @@ public:
             for (int i = 0; i < line.length(); i++) { //scrolls through characters and sets each one to a preset
                 presets.push_back(line[i]);
             }
-            
             file.close();
         }
         else { std::cout << "Unable to open presets"; }
@@ -262,29 +349,23 @@ public:
     std::string Window(std::string message, bool isinput) { //almost modal like thing
         Save(".tempsave"); //saves project temporarily to a file
         std::cout << "\e[1;1H\e[2J"; // clear screen
-        CaretPos(TermWidth()/2-(message.length()/2), TermHeight()/2-2); // set caret position to close to middle
+        if (message.length() < TermWidth()) {
+            CaretPos(TermWidth()/2-(message.length()/2), TermHeight()/2-2); // set caret position to close to middle
+        }
+        else {
+            CaretPos(0, 0);
+        }
+        
         std::cout << message; // print out message
 
-        if (isinput) { //if the window needs input(i made my own thing besides cin)
+        if (isinput) { //if the window needs input
             std::string input = "";
             CaretPos(TermWidth()/2-(message.length()/2), TermHeight()/2-1);
             EnableKeyPrint();
-            while (true) { //gets it stuck in an infinite loop that only breaks when return is pressed
-                char k = CurKey();
-                if (k != 0) {
-                    input += k;
-                }
-                if (k == '\n' || k == '\r') {
-                    std::cout << "\e[1;1H\e[2J"; // clear screen
-                    Load(".tempsave"); //loads previously saved temp file
-                    DisableKeyPrint();
-                    if (input.length() > 1) {
-                        input.erase(0, 1); //remove keypressed before (TODO: fix bug with having to press button to continue)
-                    }
-                    input.erase(input.length()-1, input.length()); // chops off newline
-                    return input;
-                }
-            }
+            std::cin >> input;
+            DisableKeyPrint();
+            Load(".tempsave");
+            return input;
         }
         else {
             while (true) {
@@ -295,7 +376,6 @@ public:
                     return "";
                 }
             }
-            
         }
     }
 
@@ -304,15 +384,19 @@ public:
 
         if (k == 'w') {
             if (y > 1) { y--; }
+            if (countstrokes) { keystrokes++; }
         } 
         if (k == 'a') {
             if (x > 1) { x--; }
+            if (countstrokes) { keystrokes++; }
         }
         if (k == 's') {
             if (y < h-1) { y++; }
+            if (countstrokes) { keystrokes++; }
         } 
         if (k == 'd') {
             if (x < w-1) { x++; }
+            if (countstrokes) { keystrokes++; }
         }
 
         //presets check
@@ -325,7 +409,6 @@ public:
 
         if (k == '\n' || k == '\r') {
             CColorPrint(style, color);
-            filelines[y-1][x-1] = style;
 
             Pixel pixel;
             pixel.style = style;
@@ -337,23 +420,39 @@ public:
         }
         if (k == ' ') {
             std::cout << ' ';
-            filelines[y-1][x-1] = ' ';
             RemCoords(x-1, y-1);
         }
 
         if (k == 'c') {
             std::string command = Window("Command:", true);
+        
             if (command == "brush") {
                 style = Window("Brush:", true)[0];
             }
+            else if (command == "help") {
+                std::string help = "";
+                for (int i = 0; i < commands.size(); i++) {
+                    help += (commands[i][0]+" - "+commands[i][1]+"\n");
+                }
+                Window(help, false);
+            }
             else if (command == "save") {
                 std::string name = Window("Enter New Filename:", true);
-                Save(name);
-                Load(".tempsave");
+                Save("."+name);
+                Load("."+name);
+            }
+            else if (command == "export.save") {
+                std::string name = Window("Enter New Filename:", true);
+                Export("."+name);
+                Load("."+name);
+            }
+            else if (command == "export.load") {
+                std::string name = Window("Enter Load Filename:", true);
+                LoadExp("."+name);
             }
             else if (command == "load") {
                 std::string name = Window("Enter Load Filename:", true);
-                Load(name);
+                Load("."+name);
             }
             else if (command == "color") {
                 int backinc = 0;
@@ -399,8 +498,11 @@ public:
                     }
                 }
                 else {
-                    std::cout << "unknown color";
+                    DrawMessage("Unknown Color");
                 }
+            }
+            else {
+                DrawMessage("Unknown Command");
             } 
         }
     }
@@ -408,6 +510,10 @@ public:
 private:
     int x = 1;
     int y = 1;
+
+    int keystrokes = 0;
+    bool countstrokes = false;
+    bool ismessage = false;
 
     std::vector<char> presets;
     std::vector<Pixel> tokens;
@@ -434,5 +540,6 @@ int main() {
 
     while (true) {
         draw.KeyPress();  
+        draw.ClearMessage();
     }
 }
