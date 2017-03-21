@@ -50,11 +50,8 @@ Shortcuts:
 
 class Draw {
 public:
-    void Init(int _w, int _h) { // Initialize the program
+    void Init(int w, int h) { // Initialize the program
         Var::var.KP(false);
-        
-        w = _w;
-        h = _h;
 
         /*
         add spaces to string(fileline), then push it to a vector(filelines).
@@ -72,12 +69,12 @@ public:
         } 
     }
 
-    void RemCoords(int x_, int y_) {
+    void RemCoords(int x, int y) {
         for (int i = 0; i < Var::var.RetP().size(); i++) {
             Pixel ctok = Var::var.RetP()[i];
-            if (ctok.x == x_ && ctok.y == y_) {
+            if (ctok.x == x && ctok.y == y) {
                 Var::var.RemP(i);
-                Var::var.ManFLS(x_, y_, ' ');
+                Var::var.ManFLS(y, x, ' ');
                 break;
             }
         }
@@ -103,7 +100,7 @@ public:
             }
         }
         if (k == 's') {
-            if (Var::var.RetY() < h-1) { 
+            if (Var::var.RetY() < Extras::extras.TermHeight()-1) { 
                 Var::var.Y(+1); 
             }
             if (Var::var.RetCS()) {
@@ -111,7 +108,7 @@ public:
             }
         } 
         if (k == 'd') {
-            if (Var::var.RetX() < w-1) { 
+            if (Var::var.RetX() < Extras::extras.TermWidth()-1) { 
                 Var::var.X(+1); 
             }
             if (Var::var.RetCS()) { 
@@ -128,16 +125,19 @@ public:
         Extras::extras.CaretPos(Var::var.RetX(), Var::var.RetY());
 
         if (k == '\n' || k == '\r') {
-            Extras::extras.CColorPrint(Var::var.RetStyle(), Var::var.RetColor(), false);
+            int cback = 0;
+            if (Var::var.RetBack()) { cback = 10; }
+            Extras::extras.CColorPrint(Var::var.RetStyle(), Var::var.RetColor()+cback, Extras::extras.IToB(Var::var.RetBright()));
             Extras::extras.CaretPos(Var::var.RetX(), Var::var.RetY());
             Pixel pixel;
             pixel.style = Var::var.RetStyle();
             pixel.color = Var::var.RetColor();
             pixel.back = Extras::extras.BoolToInt(Var::var.RetBack());
+            pixel.bright = Var::var.RetBright();
             pixel.x = Var::var.RetX()-1;
             pixel.y = Var::var.RetY()-1;
             Var::var.P(pixel);
-            Extras::extras.DrawMessage("pixsize:"+std::to_string(Var::var.RetP().size()));
+            Extras::extras.DrawMessage("x:"+std::to_string(Var::var.RetX())+",y:"+std::to_string(Var::var.RetY()));
         }
         if (k == ' ') {
             std::cout << ' ';
@@ -150,10 +150,6 @@ public:
         }
         return RETTYPE::SUCCESS;
     }
-
-private:
-    int w = 0;
-    int h = 0;
 };
 
 int main() {

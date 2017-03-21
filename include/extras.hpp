@@ -27,6 +27,8 @@ void SigIntHandler(int sig_num);
 
 class Extras {
 public:
+    bool IToB(int b);
+    bool FlipBool(bool b);
     std::string GenSpaces(int n);
     void ClearMessage();
     void DrawMessage(std::string message);

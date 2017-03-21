@@ -7,7 +7,7 @@ void IO::Save(std::string filename) {
 
     if (file.is_open()) { //checking if file is open, else printing its unable to write.
         for (int y = 0; y < Var::var.RetP().size(); y++)  {
-            file << '(' << Var::var.RetP()[y].x << ',' << Var::var.RetP()[y].y << ',' << (int)Var::var.RetP()[y].style << ',' << Var::var.RetP()[y].color << ',' << Var::var.RetP()[y].back << ')';
+            file << '(' << Var::var.RetP()[y].x << ',' << Var::var.RetP()[y].y << ',' << (int)Var::var.RetP()[y].style << ',' << Var::var.RetP()[y].color << ',' << Var::var.RetP()[y].back << ',' << Var::var.RetP()[y].bright << ')';
             file << '\n';
         }
         file.close(); //closing file saving changes
@@ -42,6 +42,7 @@ void IO::ParseLoaded(std::string line) {
             pixel.style = params[2];
             pixel.color = params[3];
             pixel.back = params[4];
+            pixel.bright = params[5];
 
             params.clear();
             Var::var.T(pixel);
@@ -76,10 +77,8 @@ void IO::Load(std::string filename) { //Loads creation from file
                 cback = BACKINC;
             }
 
-            //std::cout << ctok.x << ',' << ctok.y << ',' << ctok.style << ',' << ctok.color << ',' << ctok.back << '\n';
-            //std::cout << "loading:" << i << '\n';
             Extras::extras.CaretPos(ctok.x, ctok.y);
-            Extras::extras.CColorPrint(ctok.style, ctok.color+cback, false);
+            Extras::extras.CColorPrint(ctok.style, ctok.color+cback, Extras::extras.IToB(ctok.bright));
             Var::var.ManFLS(ctok.y, ctok.x, ctok.style);
         }
     }
@@ -125,6 +124,7 @@ void IO::LoadPresets() { //loads brush presets from hidden file
                     pixel.style = line[i];
                     pixel.color = 39;
                     pixel.back = 0;
+                    pixel.bright = 0;
                     Var::var.P(pixel);
                 }
             }
@@ -171,8 +171,11 @@ void IO::SaveToExp() {
  void IO::ResetExp() {
     Var::var.CFLS();
 
-    for (int y = 0; y < Extras::extras.TermHeight(); y++) {
-        for (int x = 0; x < Extras::extras.TermWidth(); x++) {
+    int w = Extras::extras.TermWidth();
+    int h = Extras::extras.TermHeight();
+
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
             std::cout << ' '; // fill screen with spaces
             Var::var.AddFL(' ');
         }

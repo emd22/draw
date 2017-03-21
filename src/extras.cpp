@@ -13,6 +13,24 @@ void SigIntHandler(int sig_num) {
     signal(SIGINT, SigIntHandler);
 }
 
+bool Extras::IToB(int b) {
+    if (b == 1) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+bool Extras::FlipBool(bool b) {
+    if (b) {
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
 std::string Extras::GenSpaces(int n) {
     std::string spaces = "";
     for (int i = 0; i < n; i++) {

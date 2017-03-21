@@ -10,6 +10,7 @@ struct Pixel {
     char style;
     int color;
     int back;
+    int bright;
 };
 
 class Var {
@@ -38,6 +39,9 @@ public:
     }
     void Back(bool _back) {
         back = _back;
+    }
+    void Bright(bool br) {
+        bright = br;
     }
     void IM(bool _ismessage) {
         ismessage = _ismessage;
@@ -76,7 +80,7 @@ public:
         filelines.push_back(fileline);
     }
     void ManFLS(int _x, int _y, char _style) {
-        filelines[_y][_x] = _style;
+        filelines[_x][_y] = _style;
     }
     void CFLS() {
         filelines.clear();
@@ -102,8 +106,11 @@ public:
     char RetStyle() {
         return style;
     }
-    int RetBack() {
+    bool RetBack() {
         return back;
+    }
+    bool RetBright() {
+        return bright;
     }
     bool RetIM() {
         return ismessage;
@@ -133,11 +140,12 @@ public:
     static Var var;
     
 private:
-    int x = 1;
-    int y = 1;
+    int x = 0;
+    int y = 0;
     int color = 29;
     char style = 'O';
     bool back = false;
+    bool bright = false;
     bool ismessage = false;
     bool countstrokes = false;
     bool keyprint = false;

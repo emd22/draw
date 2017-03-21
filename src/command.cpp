@@ -48,7 +48,7 @@ int FindCommand(std::string command) {
         else {
             backinc = 0;
         }
-
+        
         std::string scolor = Extras::extras.Window("Set Color:", true);
 
         if (scolor == "black") {
@@ -76,12 +76,12 @@ int FindCommand(std::string command) {
             Var::var.Color(37+backinc);
         }
         else if (scolor == "back") {
-            if (Var::var.RetBack()) {
-                Var::var.Back(false);
-            }
-            else {
-                Var::var.Back(true);
-            }
+            bool n = Extras::extras.FlipBool(Var::var.RetBack());
+            Var::var.Back(n);
+        }
+        else if (scolor == "bright") {
+            bool n = Extras::extras.FlipBool(Var::var.RetBright());
+            Var::var.Bright(n);
         }
         else {
             Extras::extras.DrawMessage("Unknown Color");
@@ -89,7 +89,6 @@ int FindCommand(std::string command) {
     }
     else if (command == "quit") {
         IO::Save("quitsave");
-        Extras::extras.Window("Quitting - Saved to file projects -> quitsave", true);
         exit(0);
     }
     else {
