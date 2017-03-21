@@ -1,0 +1,12 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+bin_dir	build.py	/^bin_dir = ".\/bin"$/;"	kind:variable	line:8
+build.py	build.py	1;"	kind:file	line:1
+command	build.py	/^            command = "{} {}\/{} ".format(command, dirpath, file)$/;"	kind:variable	line:19
+command	build.py	/^command = "{} {} -o {}\/outfile -Iinclude\/".format(compiler, options, bin_dir)$/;"	kind:variable	line:13
+compiler	build.py	/^compiler = "g++"$/;"	kind:variable	line:3
+src_dir	build.py	/^src_dir = ".\/src"$/;"	kind:variable	line:7
