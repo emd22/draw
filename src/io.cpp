@@ -7,7 +7,8 @@ void IO::Save(std::string filename) {
 
     if (file.is_open()) { //checking if file is open, else printing its unable to write.
         for (int y = 0; y < Var::var.RetP().size(); y++)  {
-            file << '(' << Var::var.RetP()[y].x << ',' << Var::var.RetP()[y].y << ',' << (int)Var::var.RetP()[y].style << ',' << Var::var.RetP()[y].color << ',' << Var::var.RetP()[y].back << ')' << '\n';
+            file << '(' << Var::var.RetP()[y].x << ',' << Var::var.RetP()[y].y << ',' << (int)Var::var.RetP()[y].style << ',' << Var::var.RetP()[y].color << ',' << Var::var.RetP()[y].back << ')';
+            file << '\n';
         }
         file.close(); //closing file saving changes
     }
@@ -163,7 +164,7 @@ void IO::SaveToExp() {
     ResetExp();
 
     for (int i = 0; i < Var::var.RetP().size(); i++) {
-        Var::var.ManFLS(Var::var.RetP()[i].x, Var::var.RetP()[i].x, Var::var.RetP()[i].style);
+        Var::var.ManFLS(Var::var.RetP()[i].x, Var::var.RetP()[i].y, Var::var.RetP()[i].style);
     }
 }
 

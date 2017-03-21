@@ -73,6 +73,7 @@ std::string Extras::Window(std::string message, bool isinput) { //almost modal l
     else {
         std::string input;
         std::cin >> input;
+        IO::Load(".tempsave");
         return "";
     }
 }

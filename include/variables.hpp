@@ -102,7 +102,7 @@ public:
     char RetStyle() {
         return style;
     }
-    bool RetBack() {
+    int RetBack() {
         return back;
     }
     bool RetIM() {
